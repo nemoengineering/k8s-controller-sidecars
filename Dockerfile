@@ -1,16 +1,14 @@
-FROM golang:1.10 AS build
-WORKDIR /go/src/github.com/nrmitchi/k8s-controller-sidecars
-RUN git clone --single-branch -b master \
-  https://github.com/nrmitchi/k8s-controller-sidecars.git /go/src/github.com/nrmitchi/k8s-controller-sidecars/
-RUN go get -v
-RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -a -installsuffix cgo -o main .
+FROM golang:1.18.1 AS build
 
-RUN apt-get update && apt-get install -y upx
-RUN upx main
+WORKDIR /usr/src/k8s-controller-sidecars
 
-RUN mkdir -p /empty
+COPY . .
+
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -a -installsuffix cgo -o k8s-controller-sidecars .
+
+
 
 FROM scratch
-COPY --from=build /go/src/github.com/nrmitchi/k8s-controller-sidecars/main /
-COPY --from=build /empty /tmp
-CMD ["/main"]
+COPY --from=build /usr/src/k8s-controller-sidecars/k8s-controller-sidecars /
+
+CMD ["/k8s-controller-sidecars"]
